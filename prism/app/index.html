@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Convert a visual — PRISM</title>
+  <meta name="description" content="Upload a STEM graph, diagram, table or circuit — or pick a sample — and PRISM converts it into a description, a structured tree, an accessible SVG, audio and extracted data. Everything runs in your browser.">
+  <link rel="canonical" href="https://anantamracing.com/hackathon/prism/app/">
+  <meta name="theme-color" content="#FFFFFF">
+  <meta property="og:title" content="Convert a visual — PRISM">
+  <meta property="og:description" content="Turn STEM visuals into descriptions, structure, accessible SVG, audio and data. Runs entirely in your browser.">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../prism.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <div id="a11y-live" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="wordmark" href="../" aria-label="PRISM home"><svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><defs><linearGradient id="pw-s" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#E5322D"/><stop offset=".25" stop-color="#F59E0B"/><stop offset=".5" stop-color="#22A06B"/><stop offset=".75" stop-color="#2563EB"/><stop offset="1" stop-color="#7C3AED"/></linearGradient></defs><path d="M4 32 H22" stroke="#111318" stroke-width="4" stroke-linecap="round"/><path d="M32 12 L48 46 H16 Z" fill="none" stroke="#111318" stroke-width="4" stroke-linejoin="round"/><path d="M42 30 L60 22 M42 32 L60 30 M42 34 L60 38 M42 36 L60 46" stroke="url(#pw-s)" stroke-width="4" stroke-linecap="round"/></svg><span class="name">PRISM</span></a>
+      <nav class="site-nav" aria-label="Site">
+        <a href="../">Home</a>
+        <a href="./">Convert</a>
+        <a href="../about/">How it works</a>
+      </nav>
+      <div class="a11y-bar" role="group" aria-label="Display settings">
+        <span class="lbl" aria-hidden="true">Text</span>
+        <button class="icon-btn" id="a11y-minus" type="button" aria-label="Decrease text size">A−</button>
+        <output id="a11y-size" aria-label="Current text size">100%</output>
+        <button class="icon-btn" id="a11y-plus" type="button" aria-label="Increase text size">A+</button>
+        <button class="btn ghost sm" id="a11y-dyslexia" type="button" aria-pressed="false">Wide spacing</button>
+      </div>
+      <a class="back-link" href="/hackathon/">← Back to Hackathon</a>
+    </div>
+  </header>
+
+  <main id="main" class="wrap">
+    <h1>Convert a visual</h1>
+    <p class="lead">Drop in a graph, diagram, table or circuit — or start from a sample — and read, hear, navigate and extract it. Nothing leaves your browser.</p>
+
+    <div class="app-grid">
+      <div>
+        <section class="panel" aria-labelledby="h-input">
+          <h2 id="h-input">1. Choose an input</h2>
+          <div class="dropzone" id="dropzone">
+            <p><strong>Drag and drop an image here</strong></p>
+            <p class="small">PNG, JPG, GIF, WebP or SVG. You can also paste an image with <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>V</kbd> anywhere on this page.</p>
+            <label class="btn primary" for="file">Choose a file<input id="file" type="file" accept="image/*,.svg" class="visually-hidden"></label>
+          </div>
+          <p id="upload-status" class="status-line" role="status" aria-live="polite"></p>
+          <div id="preview" class="preview" hidden></div>
+
+          <h3 id="h-samples">Or pick a sample</h3>
+          <p class="small" style="font-size:1rem;color:var(--muted)">Fourteen semantic SVGs covering graphs, geometry, circuits, science diagrams, tables, flowcharts, maths and chemistry.</p>
+          <ul class="samples" id="samples" aria-labelledby="h-samples"></ul>
+        </section>
+
+        <section class="panel" id="params-panel" aria-labelledby="h-params" hidden style="margin-top:1.5rem">
+          <h2 id="h-params">What happens if…?</h2>
+          <p style="font-size:1rem;color:var(--muted)">Change a parameter and every representation updates.</p>
+          <div class="params" id="params"></div>
+        </section>
+
+        <section class="panel" id="refine-panel" aria-labelledby="h-refine" hidden style="margin-top:1.5rem">
+          <h2 id="h-refine">Refine</h2>
+          <p style="font-size:1rem;color:var(--muted)">PRISM cannot read text in raster images. Tell it what the labels say and the description, data and audio will use your values.</p>
+          <form id="refine-form">
+            <div class="field"><label for="rf-title">Title of the visual</label><input id="rf-title" type="text" autocomplete="off"></div>
+            <div id="rf-axes">
+              <div class="field"><label for="rf-xlabel">X-axis label</label><input id="rf-xlabel" type="text" autocomplete="off"></div>
+              <div class="field"><label for="rf-xunit">X-axis unit</label><input id="rf-xunit" type="text" autocomplete="off"></div>
+              <div class="btn-row"><div class="field" style="flex:1"><label for="rf-xmin">X at origin</label><input id="rf-xmin" type="number" step="any"></div><div class="field" style="flex:1"><label for="rf-xmax">X at axis end</label><input id="rf-xmax" type="number" step="any"></div></div>
+              <div class="field"><label for="rf-ylabel">Y-axis label</label><input id="rf-ylabel" type="text" autocomplete="off"></div>
+              <div class="field"><label for="rf-yunit">Y-axis unit</label><input id="rf-yunit" type="text" autocomplete="off"></div>
+              <div class="btn-row"><div class="field" style="flex:1"><label for="rf-ymin">Y at origin</label><input id="rf-ymin" type="number" step="any"></div><div class="field" style="flex:1"><label for="rf-ymax">Y at axis top</label><input id="rf-ymax" type="number" step="any"></div></div>
+            </div>
+            <div id="rf-series"></div>
+            <div class="btn-row"><button class="btn primary" type="submit">Apply refinements</button></div>
+            <p class="hint" style="font-size:1rem;color:var(--muted);margin-top:.6rem">Table cell contents can be typed directly in the Data tab.</p>
+          </form>
+        </section>
+
+        <section class="panel" aria-labelledby="h-history" style="margin-top:1.5rem">
+          <h2 id="h-history">Recent conversions</h2>
+          <p id="history-empty" style="font-size:1rem;color:var(--muted)">Your last ten conversions will be listed here. They are stored only in this browser.</p>
+          <ul class="history" id="history"></ul>
+          <div class="btn-row" style="margin-top:.8rem"><button class="btn ghost sm" id="clear-history" type="button">Clear history</button></div>
+        </section>
+      </div>
+
+      <section class="panel" id="outputs" aria-labelledby="h-outputs">
+        <h2 id="h-outputs">2. Outputs</h2>
+        <div id="empty" class="notice"><p>Choose a sample or upload an image to see its description, structure, accessible visual, audio and data.</p></div>
+        <div id="results" hidden>
+          <div id="result-head">
+            <h3 id="result-title" style="margin-bottom:.4rem"></h3>
+            <p id="result-badges" class="btn-row" style="margin-bottom:.8rem"></p>
+            <div id="notes"></div>
+          </div>
+          <label class="check"><input type="checkbox" id="show-all"> Show all outputs at once (recommended with a screen reader)</label>
+          <div class="tabs" role="tablist" aria-label="Output formats" id="tablist">
+            <button class="tab" role="tab" id="tab-desc" aria-controls="panel-desc" aria-selected="true">Description</button>
+            <button class="tab" role="tab" id="tab-tree" aria-controls="panel-tree" aria-selected="false" tabindex="-1">Structure</button>
+            <button class="tab" role="tab" id="tab-svg" aria-controls="panel-svg" aria-selected="false" tabindex="-1">Accessible visual</button>
+            <button class="tab" role="tab" id="tab-audio" aria-controls="panel-audio" aria-selected="false" tabindex="-1">Audio</button>
+            <button class="tab" role="tab" id="tab-data" aria-controls="panel-data" aria-selected="false" tabindex="-1">Data</button>
+          </div>
+
+          <section class="tabpanel" role="tabpanel" id="panel-desc" aria-labelledby="tab-desc" tabindex="0">
+            <h3 class="panel-title">Description</h3>
+            <div class="levels" role="group" aria-label="Detail level">
+              <button class="btn sm" type="button" data-level="short" aria-pressed="false">Short</button>
+              <button class="btn sm" type="button" data-level="medium" aria-pressed="true">Medium</button>
+              <button class="btn sm" type="button" data-level="detailed" aria-pressed="false">Detailed</button>
+            </div>
+            <div class="description" id="description" aria-live="polite"></div>
+            <div class="btn-row" style="margin-top:1rem">
+              <button class="btn" type="button" id="speak-desc">Read aloud</button>
+              <button class="btn ghost" type="button" id="copy-desc">Copy text</button>
+            </div>
+          </section>
+
+          <section class="tabpanel" role="tabpanel" id="panel-tree" aria-labelledby="tab-tree" tabindex="0" hidden>
+            <h3 class="panel-title">Structure</h3>
+            <p style="font-size:1rem;color:var(--muted)">Objects, properties and relationships as a tree. Use <kbd>↑</kbd> <kbd>↓</kbd> to move, <kbd>→</kbd> <kbd>←</kbd> to open or close, <kbd>Enter</kbd> on a component to show it in the accessible visual.</p>
+            <div class="btn-row" style="margin-bottom:.8rem"><button class="btn ghost sm" type="button" id="tree-expand">Expand all</button><button class="btn ghost sm" type="button" id="tree-collapse">Collapse</button></div>
+            <div id="tree"></div>
+            <details style="margin-top:1rem"><summary>Text outline</summary><pre id="outline"></pre><div class="btn-row"><button class="btn ghost sm" type="button" id="copy-outline">Copy outline</button></div></details>
+          </section>
+
+          <section class="tabpanel" role="tabpanel" id="panel-svg" aria-labelledby="tab-svg" tabindex="0" hidden>
+            <h3 class="panel-title">Accessible visual</h3>
+            <p style="font-size:1rem;color:var(--muted)">Every component is focusable. <kbd>Tab</kbd> or arrow keys move between components; <kbd>Enter</kbd> asks “What is this?”. Click works too.</p>
+            <div class="btn-row" style="margin-bottom:.8rem">
+              <label class="check"><input type="checkbox" id="opt-hc"> High contrast</label>
+              <label class="check"><input type="checkbox" id="opt-large"> Large labels</label>
+              <label class="check"><input type="checkbox" id="opt-autospeak"> Speak components as I move</label>
+            </div>
+            <div class="asvg-wrap" id="asvg"></div>
+            <div class="focus-desc" id="focus-desc" aria-live="polite"><p>Move through the components to hear what each one is.</p></div>
+            <div class="btn-row" style="margin-top:1rem">
+              <button class="btn" type="button" id="speak-focus">Speak this component</button>
+              <button class="btn ghost" type="button" id="download-svg">Download accessible SVG</button>
+            </div>
+          </section>
+
+          <section class="tabpanel" role="tabpanel" id="panel-audio" aria-labelledby="tab-audio" tabindex="0" hidden>
+            <h3 class="panel-title">Audio</h3>
+            <div id="speech-unsupported" class="notice warn" hidden><p>Speech synthesis is not available in this browser. The text description and structure tabs contain the same information.</p></div>
+            <div class="speech-controls" id="speech-controls">
+              <div class="row">
+                <div><label for="voice">Voice</label><select id="voice"></select></div>
+                <div><label for="rate">Speed: <output id="rate-out">1.0×</output></label><input id="rate" type="range" min="0.5" max="2" step="0.1" value="1"></div>
+              </div>
+              <div class="btn-row">
+                <button class="btn primary" type="button" id="sp-play">Play description</button>
+                <button class="btn ghost" type="button" id="sp-pause">Pause</button>
+                <button class="btn ghost" type="button" id="sp-resume">Resume</button>
+                <button class="btn ghost" type="button" id="sp-stop">Stop</button>
+                <span id="sp-status" class="status-line" role="status" aria-live="polite"></span>
+              </div>
+              <h4>Speak one component</h4>
+              <ul class="component-list" id="component-list"></ul>
+            </div>
+            <hr>
+            <h4>Sonification</h4>
+            <p style="font-size:1rem;color:var(--muted)">Hear the shape of a graph: pitch rises with the y-value while time sweeps along the x-axis (A3 to A5, two octaves).</p>
+            <div id="sonify-unavailable" class="notice" hidden><p>Sonification needs a graph with a data series. Pick a graph sample or upload a graph.</p></div>
+            <div id="sonify" class="sonify-bar">
+              <label for="sonify-series" class="visually-hidden">Series to sonify</label><select id="sonify-series" style="width:auto;flex:1 1 180px"></select>
+              <label for="sonify-dur" class="visually-hidden">Duration in seconds</label><select id="sonify-dur" style="width:auto"><option value="2">2 s</option><option value="4" selected>4 s</option><option value="8">8 s</option></select>
+              <button class="btn primary" type="button" id="sonify-play">Play sonification</button>
+              <button class="btn ghost" type="button" id="sonify-stop">Stop</button>
+            </div>
+            <p id="sonify-status" class="status-line" role="status" aria-live="polite"></p>
+          </section>
+
+          <section class="tabpanel" role="tabpanel" id="panel-data" aria-labelledby="tab-data" tabindex="0" hidden>
+            <h3 class="panel-title">Data</h3>
+            <div id="stats" class="stats"></div>
+            <div id="data-none" class="notice" hidden><p>This visual has no numeric data series or table to extract. Its properties are in the Structure tab and the JSON export.</p></div>
+            <div class="table-scroll"><table class="data" id="data-table"></table></div>
+            <div class="btn-row" style="margin-top:1rem">
+              <button class="btn" type="button" id="apply-table">Apply edited values</button>
+              <button class="btn ghost" type="button" id="dl-csv">Download CSV</button>
+              <button class="btn ghost" type="button" id="dl-json">Download JSON</button>
+            </div>
+          </section>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>PRISM — See the science differently. Nothing you convert leaves your browser.</p>
+      <p>An independent project, supported and showcased by <a href="/hackathon/">Anantam Hackathon</a>. <a href="/hackathon/">← Back to Hackathon</a></p>
+    </div>
+  </footer>
+  <script type="module" src="../js/app.js"></script>
+</body>
+</html>

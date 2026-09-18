@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Docs — STEMSCAPE</title>
+  <meta name="description" content="How STEMSCAPE models each mission: microgrid dispatch equations, the 2D truss stiffness solver, treatment-train series removal, flood routing, scoring formulas, accessibility and limitations.">
+  <link rel="canonical" href="https://anantamracing.com/hackathon/stemscape/docs/">
+  <meta name="theme-color" content="#0B1A3A">
+  <meta property="og:title" content="STEMSCAPE Docs — models, assumptions and scoring">
+  <meta property="og:description" content="Every equation and assumption behind the four STEMSCAPE missions, the scoring formula, accessibility features and known limitations.">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Chakra+Petch:wght@600;700&family=Nunito:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../stemscape.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="../" aria-label="STEMSCAPE home">
+        <svg viewBox="0 0 64 64" aria-hidden="true"><polygon points="32,6 58,19 32,32 6,19" fill="#3FD27A"/><polygon points="6,19 32,32 32,58 6,45" fill="#22D3C5"/><polygon points="58,19 32,32 32,58 58,45" fill="#FFB020"/></svg>
+        <span>STEMSCAPE<span class="tag">Engineer the world.</span></span>
+      </a>
+      <nav class="site-nav" aria-label="Site">
+        <a href="../play/">Play</a>
+        <a href="./" aria-current="page">Docs</a>
+        <a href="../">About</a>
+        <a class="back" href="/hackathon/">← Back to Hackathon</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="wrap docs-layout">
+      <nav class="docs-toc" aria-label="On this page">
+        <ol>
+          <li><a href="#overview">Overview</a></li>
+          <li><a href="#power">Mission 1 · Village Power</a></li>
+          <li><a href="#bridge">Mission 2 · Bridge Builder</a></li>
+          <li><a href="#water">Mission 3 · Clean Water</a></li>
+          <li><a href="#flood">Mission 4 · Flood Defence</a></li>
+          <li><a href="#scoring">Scoring, stars, badges</a></li>
+          <li><a href="#accessibility">Accessibility</a></li>
+          <li><a href="#limitations">Limitations</a></li>
+          <li><a href="#data">Data &amp; privacy</a></li>
+        </ol>
+      </nav>
+
+      <div class="docs-body">
+        <section id="overview">
+          <h1 style="font-size:clamp(1.8rem,4vw,2.8rem)">How STEMSCAPE is modelled</h1>
+          <p>STEMSCAPE is a browser game, but every number it shows is the output of a small engineering model running on your device. This page lists the equations, the parameter values, the simplifications we made and why. Parameter values are representative of rural and small-town India and are chosen for teaching consistency, not as a design reference — see <a href="#limitations">Limitations</a>.</p>
+          <p>Design of each mission is stored as a plain object; the simulation is a pure function <code>simulate(design) → results</code>, so re-running the same design always gives the same report. Random elements (grid outages, cloud cover) are generated from a fixed seed.</p>
+        </section>
+
+        <section id="power">
+          <h2>Mission 1 · Village Power</h2>
+          <h3>Site and demand</h3>
+          <p>Kesarpur: 1,240 people in 260 households (26 house tiles × 10), a primary health clinic, a school and a well. Demand profiles are hourly shapes normalised to daily energy:</p>
+          <div class="table-wrap"><table><thead><tr><th>Load</th><th>Daily energy</th><th>Shape</th></tr></thead><tbody>
+            <tr><td>Households</td><td>1.6 kWh/household/day (416 kWh)</td><td>Evening peak 18:00–21:00 (≈2.5× the night base)</td></tr>
+            <tr><td>Clinic</td><td>30 kWh/day</td><td>Night base (vaccine fridge) + daytime activity</td></tr>
+            <tr><td>School</td><td>15 kWh/day</td><td>07:00–16:00 only</td></tr>
+            <tr><td>Well pump</td><td>3 kW while running</td><td>Deferrable: prefers daylight, runs when the tank drops below 35%</td></tr>
+          </tbody></table></div>
+          <h3>Connectivity</h3>
+          <p>Distribution lines, generation, batteries, the pump and the grid connection point are <em>conductive</em> tiles. Their 4-neighbour connected components are separate networks, each simulated independently. A house, the clinic or the school is attached to the network of any adjacent conductive tile; if none is adjacent it is unconnected and its entire demand counts as unserved.</p>
+          <h3>Hourly dispatch (7 days × 24 h)</h3>
+          <div class="eq">solar_kW(h) = P_solar × IRR(hod) × 0.80 × cloud(day)      IRR peaks 0.98 at 12:00, ≈5.0 peak-sun-hours/day; cloud ∈ [0.65, 1.0] seeded
+wind_kW(h)  = P_wind × CF(hod) × var(day)                CF 0.18 (night) … 0.42 (afternoon), var ∈ [0.7, 1.3]
+load(h)     = households + clinic + school + pump
+if renewables ≥ load: charge = min(surplus, 0.5C, (E_usable − SOC)/√η) ; SOC += charge·√η ; rest curtailed
+else: discharge = min(deficit, 0.5C, SOC·√η) ; then grid (≤ 40 kW, only when available) ; then diesel (≤ P_gen) ; rest unserved
+grid also charges the battery up to 60% SOC at night when it is up</div>
+          <p>Battery usable energy is 85% of nameplate (depth of discharge), round-trip efficiency 92% split equally between charge and discharge, and C-rate 0.5. Grid availability is a two-state Markov chain (P(up→down) = 0.09/h, P(down→up) = 0.13/h → ≈59% availability) from a fixed seed, so outages are identical between runs.</p>
+          <h3>Water sub-model</h3>
+          <p>Demand is 50 L/person/day (62,000 L) with a morning/evening shape. The pump delivers 12,000 L/h into storage (20,000 L per tank + a 2,000 L header). Each hour the pump runs for the fraction of the hour the tank can absorb; if the network cannot power it, pumping scales with the served fraction. Water reliability = delivered ÷ demanded.</p>
+          <h3>Costs and emissions</h3>
+          <div class="table-wrap"><table><thead><tr><th>Item</th><th>Capex</th><th>Notes</th></tr></thead><tbody>
+            <tr><td>Distribution line</td><td>₹15,000 / tile</td><td>Pole + LV line</td></tr>
+            <tr><td>Solar array 5 kW</td><td>₹2,00,000</td><td>₹40/W installed, derating 0.80</td></tr>
+            <tr><td>Wind turbine 10 kW</td><td>₹9,00,000</td><td>Average capacity factor ≈ 0.28</td></tr>
+            <tr><td>Battery 10 kWh</td><td>₹1,20,000</td><td>₹12,000/kWh</td></tr>
+            <tr><td>Diesel generator 15 kW</td><td>₹3,20,000</td><td>₹26/kWh fuel, 0.78 kg CO₂/kWh</td></tr>
+            <tr><td>Grid import</td><td>—</td><td>₹8/kWh, 0.71 kg CO₂/kWh (Indian grid average)</td></tr>
+            <tr><td>Well pump / tank</td><td>₹1,20,000 / ₹90,000</td><td>3 kW, 12,000 L/h / 20,000 L</td></tr>
+          </tbody></table></div>
+          <p>Opex per year = diesel kWh × ₹26 + grid kWh × ₹8 + 1.5% of capex (maintenance). CO₂ is compared with a diesel-only baseline (all demand × 0.78 kg/kWh); credit is only given for energy actually served.</p>
+        </section>
+
+        <section id="bridge">
+          <h2>Mission 2 · Bridge Builder</h2>
+          <h3>Geometry and loads</h3>
+          <p>A 24 m span with joints on a 2 m grid, y from −4 m to +6 m. The left abutment is a pin (u = v = 0), the right a roller (v = 0). The deck is the chain of deck-level joints (y = 0) from x = 0 to 24 with no panel longer than 6 m; deck stringers hand loads to the two bounding joints by the lever rule. The deck surface weighs 2 kN/m. The truck is 12 t (117.7 kN) on two axles 4 m apart, stepped across in 2 m increments (15 positions); every position is solved.</p>
+          <h3>Solver</h3>
+          <div class="eq">k_e = (EA/L) · [ c²  cs −c² −cs ; cs s² −cs −s² ; −c² −cs c² cs ; −cs −s² cs s² ]
+K u = F  (assembled, fixed DOFs removed, Gaussian elimination with partial pivoting)
+N_m = (EA/L) · [ (u_b − u_a)·c + (v_b − v_a)·s ]        (+ tension)
+singular K (pivot &lt; 10⁻¹⁰ · max diagonal) ⇒ mechanism ⇒ collapse</div>
+          <p>Self-weight of every member (ρ·A·L·g) is split between its end joints. The determinacy count m + r − 2j is reported; indeterminate trusses are solved by the same stiffness method.</p>
+          <h3>Materials and capacity</h3>
+          <div class="table-wrap"><table><thead><tr><th>Material</th><th>ρ (kg/m³)</th><th>σ allow tension / compression</th><th>E</th><th>Price</th><th>Sections</th></tr></thead><tbody>
+            <tr><td>Steel tube</td><td>7,850</td><td>250 / 250 MPa</td><td>200 GPa</td><td>₹80/kg</td><td>80, 120, 160 mm hollow square</td></tr>
+            <tr><td>Sal timber</td><td>800</td><td>14 / 11 MPa</td><td>12 GPa</td><td>₹35/kg</td><td>100, 150, 200 mm solid</td></tr>
+            <tr><td>Bamboo bundle</td><td>700</td><td>25 / 18 MPa</td><td>15 GPa</td><td>₹12/kg</td><td>3 or 6 culms Ø100 mm</td></tr>
+            <tr><td>Precast concrete</td><td>2,500</td><td>3 / 15 MPa</td><td>27 GPa</td><td>₹9/kg</td><td>200, 300 mm solid</td></tr>
+          </tbody></table></div>
+          <div class="eq">capacity_tension = σ_t · A
+capacity_compression = min( σ_c · A , P_cr = π² E I / L² )     (pin-ended Euler buckling)
+utilisation = |N| / capacity ;  safety factor = 1 / max utilisation ;  fail if any utilisation &gt; 1
+deflection limit = L/250 = 96 mm (max downward deck displacement over all truck positions)</div>
+          <p>Cost = Σ ρ·A·L·price + ₹4,000 per joint + ₹36,000 for the deck surface; budget ₹6 lakh.</p>
+        </section>
+
+        <section id="water">
+          <h2>Mission 3 · Clean Water</h2>
+          <p>Dhaneri: 3,800 people × 40 L/day = 152,000 L/day. Source water: 85 NTU turbidity, 1,200 E. coli CFU/100 mL, 45 µg/L arsenic, 1.8 mg/L fluoride. Limits used: turbidity &lt; 1 NTU, E. coli &lt; 1/100 mL, arsenic &lt; 10 µg/L, fluoride ≤ 1.5 mg/L (aligned with WHO guideline values).</p>
+          <h3>Treatment train</h3>
+          <p>Stages on the process lane are ordered by x-position (left → right). Repeated stages of the same type are parallel units (capacity adds, removal applies once). Removal is applied in series:</p>
+          <div class="eq">C_out = C_in × (1 − r)            for turbidity, arsenic, fluoride
+N_out = N_in × 10^(−LRV)          for bacteria (log removal value)
+capacity = min over stages ( units × unit capacity )   ; RO passes only 50% of its inflow (recovery)</div>
+          <p>Conditional performance (the part that teaches process order): slow sand filters receiving &gt; 30 NTU clog (half capacity, 70% removal); rapid sand filters without upstream coagulation only remove 50% turbidity; chlorination and UV receiving &gt; 5 NTU only achieve 1-log / 1.5-log because particles shield organisms; RO fouls above 5 NTU (half capacity). Without an intake screen the pump loses 30% capacity to clogging.</p>
+          <div class="table-wrap"><table><thead><tr><th>Stage</th><th>Capacity L/day</th><th>Turbidity</th><th>E. coli</th><th>As</th><th>F</th><th>kWh/m³</th><th>Capex</th><th>Opex/yr</th></tr></thead><tbody>
+            <tr><td>Intake pump</td><td>240,000</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.35</td><td>₹1.8 L</td><td>₹20 k</td></tr>
+            <tr><td>Intake screen</td><td>400,000</td><td>5%</td><td>—</td><td>—</td><td>—</td><td>0</td><td>₹40 k</td><td>₹2 k</td></tr>
+            <tr><td>Coagulation + settling</td><td>120,000</td><td>85%</td><td>0.5 log</td><td>60%</td><td>10%</td><td>0.02</td><td>₹2.6 L</td><td>₹60 k</td></tr>
+            <tr><td>Slow sand filter</td><td>60,000</td><td>90%</td><td>2.0 log</td><td>10%</td><td>—</td><td>0</td><td>₹1.8 L</td><td>₹15 k</td></tr>
+            <tr><td>Rapid sand filter</td><td>200,000</td><td>80%</td><td>0.5 log</td><td>—</td><td>—</td><td>0.05</td><td>₹2.2 L</td><td>₹30 k</td></tr>
+            <tr><td>Activated carbon</td><td>150,000</td><td>10%</td><td>—</td><td>15%</td><td>5%</td><td>0.02</td><td>₹1.5 L</td><td>₹45 k</td></tr>
+            <tr><td>Activated alumina</td><td>100,000</td><td>—</td><td>—</td><td>50%</td><td>90%</td><td>0.02</td><td>₹1.6 L</td><td>₹55 k</td></tr>
+            <tr><td>Chlorination</td><td>500,000</td><td>—</td><td>3.0 log</td><td>—</td><td>—</td><td>0.005</td><td>₹60 k</td><td>₹25 k</td></tr>
+            <tr><td>UV</td><td>150,000</td><td>—</td><td>4.0 log</td><td>—</td><td>—</td><td>0.04</td><td>₹1.4 L</td><td>₹20 k</td></tr>
+            <tr><td>Reverse osmosis</td><td>80,000</td><td>99%</td><td>4.0 log</td><td>95%</td><td>95%</td><td>2.5</td><td>₹4.5 L</td><td>₹1.2 L</td></tr>
+          </tbody></table></div>
+          <p>Storage: 50,000 L per tank; reliability = 0.6 + 0.4 × min(1, storage hours ÷ 12). Population served = 3,800 × min(1, capacity ÷ demand) × reliability, and only counts as <em>safe</em> if all four limits are met. Energy is bought from the grid at ₹9/kWh (0.71 kg CO₂/kWh); each 5 kW solar array offsets 20 kWh/day. Budget ₹18 lakh.</p>
+        </section>
+
+        <section id="flood">
+          <h2>Mission 4 · Flood Defence</h2>
+          <h3>Storm and channel</h3>
+          <div class="eq">Q(t) = 30 + (Q_peak − 30) · (t/24)⁴ · e^{4(1 − t/24)}      m³/s, 0 ≤ t ≤ 72 h, Δt = 0.1 h
+Q_peak: 10-yr 180, 50-yr 300, 100-yr 380 m³/s
+Manning: Q = (1/n) · A · R^{2/3} · S^{1/2}     channel 30 m × 3 m, n = 0.035, S = 0.0008 → bankfull ≈ 134 m³/s
+above bankfull: floodplain flow with n = 0.10 over 60 m (left) + 40 m (town side, removed by a levee)</div>
+          <h3>Routing</h3>
+          <p>Level-pool routing over a 1 km reach: dS/dt = I − O − spill, with S(h) the stage-storage of channel + floodplain (the town-side floodplain is removed when a levee exists — which is why a levee raises the river level, the "levee effect" the game reports). Detention basins (2.5 million m³ each) divert inflow above 250 m³/s until full.</p>
+          <div class="eq">levee overtopping: q = 1.7 · L · (h − max(crest, h_town))^{1.5}   (broad-crested weir, per 100 m bank tile; gaps have crest 3.5 m)
+no levee: the town is hydraulically connected — its water level follows the river above 3.5 m
+town stage–storage: tiles fill lowest first; ground = 3.5 m + 0.25 m per tile away from the river
+drainage: 5 m³/s flap-gate outfall when the river is lower + pumps (10,000 m³/h, 0.3 kWh/m³)</div>
+          <h3>Damage and risk</h3>
+          <div class="eq">damage fraction f(d) = 0.05 + 0.20 · d^{0.8}  (capped at 1), d = max flood depth at the asset, −1.5 m if elevated
+damage = Σ f(d) × asset value   (house tile ₹1.6 cr, clinic ₹6 cr, school ₹4 cr, market ₹5 cr, substation ₹10 cr)
+expected annual damage ≈ ∫ D(p) dp over p = 0.2 → 0.1 → 0.02 → 0.01 (trapezoids) + D₁₀₀ × 0.01</div>
+          <p>All three storms are routed on every run; the selected storm drives the animation and the "damage avoided" sub-score, while residual risk uses the integral. Costs: levee ₹30k / ₹60k / ₹1 lakh per metre for 1 / 2 / 3 m (100 m per tile), basin ₹12 crore, dredging ₹40 lakh per tile (+1 m, whole reach required), widening ₹60 lakh per tile (+10 m), pump ₹80 lakh, elevating a house tile ₹25 lakh (assets ×3). Budget ₹40 crore.</p>
+        </section>
+
+        <section id="scoring">
+          <h2>Scoring, stars and badges</h2>
+          <p>Each mission computes 5 sub-scores in [0, 1] from the simulation variables and combines them with fixed weights; the formula and every sub-score are printed in the report so nothing is hidden.</p>
+          <div class="table-wrap"><table><thead><tr><th>Mission</th><th>Weights</th><th>Penalty</th></tr></thead><tbody>
+            <tr><td>Village Power</td><td>Reliability 30 · Population 20 · Cost 20 · Environment 20 · Water 10</td><td>× 0.6 if over budget</td></tr>
+            <tr><td>Bridge Builder</td><td>Safety 35 · Deflection 20 · Cost 25 · Material efficiency 10 · Crossing 10</td><td>× 0.5 on collapse</td></tr>
+            <tr><td>Clean Water</td><td>Safety 35 · Coverage 25 · Cost 20 · Energy 10 · Reliability 10</td><td>× 0.6 if over budget</td></tr>
+            <tr><td>Flood Defence</td><td>Damage avoided 35 · Residual risk 25 · Cost 20 · People 10 · Pump energy 10</td><td>× 0.6 if over budget</td></tr>
+          </tbody></table></div>
+          <p>The cost sub-score is 1 − 0.6 × capex ÷ budget (0.4 at exactly the budget, 0 above it), scaled by how much of the population is actually served so that an empty design cannot score on frugality. Stars: ≥ 50 → 1, ≥ 70 → 2, ≥ 85 → 3. Missions unlock when the previous mission has at least one star; "Unlock all (free play)" bypasses this. Badges are derived from run results only (e.g. <em>Zero diesel</em> requires no generator energy <em>and</em> ≥ 90% reliability; <em>Under budget</em> requires a passing score).</p>
+        </section>
+
+        <section id="accessibility">
+          <h2>Accessibility</h2>
+          <ul>
+            <li>The canvas is a focusable <code>role="application"</code>: arrow keys move a tile cursor, Enter places, Delete removes, I inspects, digits pick palette items, R runs, Escape cancels. Tab reaches the palette, mode buttons, inspector, run button and report.</li>
+            <li>Every canvas change is announced in an <code>aria-live</code> status line and reflected in the "Placed components" text list; the world map has an equivalent mission list of buttons.</li>
+            <li>The report is plain text (downloadable and printable); charts are SVGs with a full-data <code>aria-label</code>; colour is never the only indicator (member failure is red <em>and</em> dashed <em>and</em> listed).</li>
+            <li><code>prefers-reduced-motion</code> disables the animation loop: the scene is drawn once per change with a static day-time frame.</li>
+            <li>Text is in rem units, contrast ≥ 4.5:1 on all panels, visible focus rings, no keyboard traps (the tutorial is a native <code>&lt;dialog&gt;</code>).</li>
+            <li>On phones the palette becomes a bottom sheet; all controls remain reachable.</li>
+          </ul>
+        </section>
+
+        <section id="limitations">
+          <h2>Limitations (honest list)</h2>
+          <ul>
+            <li>Parameter values are representative, not sourced from a specific tariff order, code or catalogue. Do not use STEMSCAPE outputs for real design.</li>
+            <li>Village Power ignores voltage drop, line losses, reactive power, generator minimum load, battery degradation and solar tilt; the grid is a simple capacity with random availability.</li>
+            <li>Bridge Builder is a pin-jointed 2D truss: no bending in members, no joint design, no lateral stability, no dynamic or fatigue effects; buckling uses pin-ended Euler with no effective-length factors.</li>
+            <li>Clean Water uses fixed removal efficiencies; real performance depends on dose, contact time, temperature, pH and maintenance. Fluoride and arsenic chemistry (As(III) vs As(V)) is not modelled.</li>
+            <li>Flood Defence is one-dimensional: a single reach, a lumped town stage–storage, no groundwater, seepage, levee breach or debris; the depth–damage curve is a single generic function.</li>
+            <li>Scores are a teaching device: the weights encode our priorities, not a regulatory or economic standard.</li>
+          </ul>
+        </section>
+
+        <section id="data">
+          <h2>Data &amp; privacy</h2>
+          <p>No account, no analytics, no network calls except Google Fonts. Progress, designs, run history and the tutorial flag are stored in your browser under the localStorage key <code>stemscape:v1</code>; "Reset progress" on the world map removes it. The downloadable report is generated locally as a text file.</p>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="row">
+        <nav aria-label="Footer"><a href="../">About</a><a href="../play/">Play</a><a href="./">Docs</a></nav>
+        <a href="/hackathon/">← Back to Hackathon</a>
+      </div>
+      <p class="quiet">An independent project, supported and showcased by <a href="/hackathon/">Anantam Hackathon</a>.</p>
+    </div>
+  </footer>
+</body>
+</html>

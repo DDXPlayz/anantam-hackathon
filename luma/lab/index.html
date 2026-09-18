@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Laboratory — LUMA</title>
+  <meta name="description" content="The LUMA virtual laboratory: nine physics, electronics and chemistry experiments with live apparatus, instrument readouts, data tables, graphs and auto-generated reports.">
+  <link rel="canonical" href="https://anantamracing.com/hackathon/luma/lab/">
+  <meta name="theme-color" content="#07090B">
+  <meta property="og:title" content="LUMA Laboratory">
+  <meta property="og:description" content="Run real, mathematically modelled STEM experiments in your browser.">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../luma.css?v=3">
+  <script>try{var p=JSON.parse(localStorage.getItem('luma:v1')||'{}').prefs||{};var r=document.documentElement;if(p.hc)r.classList.add('hc');if(p.simple)r.classList.add('simple');if(p.rm===true||(p.rm==null&&matchMedia('(prefers-reduced-motion: reduce)').matches))r.classList.add('rm');}catch(e){}</script>
+</head>
+<body class="lab-body">
+  <a class="skip-link" href="#main">Skip to the apparatus</a>
+  <header class="topbar">
+    <a class="wordmark" href="../" aria-label="LUMA home">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="17" fill="none" stroke="currentColor" stroke-width="4"/><path d="M4 32 H22 M42 32 H60" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M25 32 L39 32" stroke="#FFB547" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="#FFB547"/></svg>
+      LUMA <small>laboratory</small>
+    </a>
+    <span class="led led--on" id="led-sys">system ready</span>
+    <nav class="topnav" aria-label="Site">
+      <div class="pref-toggles" role="group" aria-label="Accessibility preferences">
+        <button type="button" class="toggle" data-pref="hc" data-label="High contrast" aria-pressed="false"><span class="sw" aria-hidden="true"></span>High contrast</button>
+        <button type="button" class="toggle" data-pref="rm" data-label="Reduced motion" aria-pressed="false"><span class="sw" aria-hidden="true"></span>Reduced motion</button>
+        <button type="button" class="toggle" data-pref="simple" data-label="Simplified interface" aria-pressed="false"><span class="sw" aria-hidden="true"></span>Simplified</button>
+      </div>
+      <a href="../">Home</a>
+      <a href="./" aria-current="page">Laboratory</a>
+      <a href="../docs/">Docs</a>
+      <a class="back" href="/hackathon/">← Back to Hackathon</a>
+    </nav>
+  </header>
+
+  <div class="workspace">
+    <nav class="rail panel" aria-label="Experiments">
+      <div class="rail__select">
+        <label for="rail-select" class="eyebrow" style="margin:0">Experiment</label>
+        <select id="rail-select"></select>
+      </div>
+      <div class="rail__groups" id="rail-groups"></div>
+    </nav>
+
+    <main id="main" class="stage">
+      <section class="panel apparatus" aria-labelledby="app-title">
+        <div class="panel__head">
+          <h2 id="app-title">Apparatus</h2>
+          <div class="apparatus__status">
+            <span class="led" id="led-run">idle</span>
+            <span class="led" id="led-power" hidden>off</span>
+          </div>
+          <span class="apparatus__clock" id="clock" aria-hidden="true"></span>
+        </div>
+        <div class="apparatus__view">
+          <svg id="apparatus" viewBox="0 0 800 450" role="img" aria-labelledby="app-title" aria-describedby="apparatus-desc" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        <p class="apparatus__desc" id="apparatus-desc"></p>
+      </section>
+
+      <section class="panel controls" aria-labelledby="ctl-title">
+        <div class="panel__head">
+          <h2 id="ctl-title">Controls</h2>
+          <span class="spacer"></span>
+          <button type="button" class="btn btn--sm" id="btn-reset-params">Reset parameters</button>
+        </div>
+        <div class="panel__body">
+          <div class="controls__grid" id="controls-grid"></div>
+          <div class="components" id="components" hidden>
+            <div class="components__head">
+              <h3 id="components-title">Components</h3>
+              <span class="count" id="components-count"></span>
+              <span class="spacer" style="margin-left:auto"></span>
+              <button type="button" class="btn btn--sm" id="btn-add-comp">Add</button>
+            </div>
+            <ul class="components__list" id="components-list"></ul>
+          </div>
+        </div>
+      </section>
+
+      <div class="panel toolbar" role="toolbar" aria-label="Run controls">
+        <button type="button" class="btn btn--primary" id="btn-start">Start</button>
+        <button type="button" class="btn" id="btn-pause" aria-pressed="false">Pause</button>
+        <button type="button" class="btn" id="btn-stop">Stop</button>
+        <button type="button" class="btn" id="btn-step" hidden>Step</button>
+        <button type="button" class="btn" id="btn-reset">Reset</button>
+        <span class="sep" aria-hidden="true"></span>
+        <button type="button" class="btn btn--amber" id="btn-measure">Take measurement</button>
+        <button type="button" class="btn" id="btn-report">Generate report</button>
+        <span class="grow"></span>
+        <span class="msg" id="toolbar-msg" role="status"></span>
+      </div>
+
+      <section class="task-strip" id="task-strip" aria-labelledby="task-eyebrow">
+        <p class="eyebrow" id="task-eyebrow">Task 1 of 5</p>
+        <p id="task-title" style="font-weight:600"></p>
+        <p id="task-text"></p>
+        <div class="row">
+          <button type="button" class="btn btn--sm" id="task-prev">← Previous</button>
+          <button type="button" class="btn btn--sm btn--primary" id="task-next">Next task →</button>
+        </div>
+      </section>
+    </main>
+
+    <aside class="readouts" aria-label="Readouts and data">
+      <section class="panel" aria-labelledby="meters-title">
+        <div class="panel__head"><h2 id="meters-title">Readouts</h2><span class="spacer"></span><span class="led" id="led-meas">measurements: 0</span></div>
+        <div class="panel__body">
+          <div class="meter-grid" id="meters"></div>
+          <div id="warnings"></div>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="graph-title">
+        <div class="panel__head"><h2 id="graph-title">Graph</h2></div>
+        <div class="panel__body">
+          <div class="graph__tools">
+            <label for="graph-select" class="visually-hidden">Graph type</label>
+            <select id="graph-select"></select>
+            <button type="button" class="btn btn--sm" id="btn-describe">Describe this graph</button>
+          </div>
+          <canvas id="graph" class="graph__canvas" role="img" aria-labelledby="graph-title" aria-describedby="graph-desc"></canvas>
+          <p class="graph__desc" id="graph-desc" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="data-title">
+        <div class="panel__head"><h2 id="data-title">Data table</h2></div>
+        <div class="panel__body">
+          <div class="table-wrap" id="table-wrap">
+            <table class="data" id="data-table"><caption class="visually-hidden">Recorded measurements</caption><thead></thead><tbody></tbody></table>
+            <p class="empty-note" id="table-empty">No measurements yet. Set up the apparatus and press "Take measurement".</p>
+          </div>
+          <div class="table-tools">
+            <button type="button" class="btn btn--sm" id="btn-csv">Download CSV</button>
+            <button type="button" class="btn btn--sm btn--danger" id="btn-clear-rows">Clear data</button>
+            <span class="n" id="row-count">0 rows</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel notes" aria-labelledby="notes-title">
+        <div class="panel__head"><h2 id="notes-title">Observations</h2></div>
+        <div class="panel__body">
+          <label for="note-text" class="visually-hidden">Observation text</label>
+          <textarea id="note-text" placeholder="What do you notice? e.g. 'Range peaks near 45° and falls symmetrically either side.'"></textarea>
+          <div class="table-tools">
+            <button type="button" class="btn btn--sm btn--amber" id="btn-note">Record observation</button>
+            <span class="n" id="note-hint">saved with a timestamp</span>
+          </div>
+          <ul class="notes__list" id="notes-list"></ul>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <dialog class="report" id="report-dialog" aria-labelledby="report-heading">
+    <div class="report__bar">
+      <h2 id="report-heading">Experiment report</h2>
+      <span class="spacer"></span>
+      <button type="button" class="btn btn--sm" id="btn-print">Print / save as PDF</button>
+      <button type="button" class="btn btn--sm" id="btn-dl-html">Download HTML</button>
+      <button type="button" class="btn btn--sm" id="btn-dl-json">Download JSON</button>
+      <button type="button" class="btn btn--sm" id="btn-close-report">Close</button>
+    </div>
+    <div class="report__body" id="report-body"></div>
+  </dialog>
+
+  <footer class="footer">
+    <div class="wrap">
+      <p class="quiet">An independent project, supported and showcased by <a href="/hackathon/">Anantam Hackathon</a>.</p>
+      <nav aria-label="Footer"><a href="../">Home</a><a href="../docs/">Documentation</a><a href="/hackathon/">← Back to Hackathon</a></nav>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" hidden aria-hidden="true"></div>
+  <div id="sr-announce" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
+  <script type="module" src="../js/lab.js"></script>
+</body>
+</html>

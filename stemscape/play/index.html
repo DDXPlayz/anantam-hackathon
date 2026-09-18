@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Play — STEMSCAPE</title>
+  <meta name="description" content="Play STEMSCAPE: four engineering missions — village microgrid, truss bridge, water treatment and flood defence — simulated with real models and honest quantitative feedback.">
+  <link rel="canonical" href="https://anantamracing.com/hackathon/stemscape/play/">
+  <meta name="theme-color" content="#0B1A3A">
+  <meta property="og:title" content="Play STEMSCAPE — Engineer the world.">
+  <meta property="og:description" content="Four engineering missions with real simulation models. Design, run, read the report, iterate.">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Chakra+Petch:wght@600;700&family=Nunito:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../stemscape.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to game</a>
+  <header class="site-header game-header">
+    <div class="wrap">
+      <a class="brand" href="../" aria-label="STEMSCAPE home">
+        <svg viewBox="0 0 64 64" aria-hidden="true"><polygon points="32,6 58,19 32,32 6,19" fill="#3FD27A"/><polygon points="6,19 32,32 32,58 6,45" fill="#22D3C5"/><polygon points="58,19 32,32 32,58 58,45" fill="#FFB020"/></svg>
+        <span>STEMSCAPE<span class="tag">Engineer the world.</span></span>
+      </a>
+      <nav class="site-nav" aria-label="Site">
+        <a href="./" aria-current="page">Play</a>
+        <a href="../docs/">Docs</a>
+        <a href="../">About</a>
+        <a class="back" href="/hackathon/">← Back to Hackathon</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="game-main">
+    <div class="wrap">
+      <!-- ================= WORLD SCREEN ================= -->
+      <section id="screen-world" class="screen" aria-labelledby="world-title">
+        <div class="mission-top">
+          <h2 id="world-title">World map</h2>
+          <span class="chip teal" id="progress-chip">0 / 12 stars</span>
+          <span class="spacer"></span>
+          <button type="button" class="btn sm ghost" id="btn-help">How to play</button>
+        </div>
+        <div class="world-layout">
+          <div class="world-stage">
+            <canvas id="world-canvas" aria-hidden="true"></canvas>
+            <div class="legend" aria-hidden="true"><span class="chip amber">Hover a marker</span></div>
+          </div>
+          <div>
+            <p class="visually-hidden">The map shows four mission sites. Use the list below to open a mission.</p>
+            <ul class="mission-list" id="mission-list" aria-label="Missions"></ul>
+            <div class="panel tight mcard" id="mission-card" aria-live="polite" style="margin-top:12px">
+              <p class="brief">Hover or focus a mission to see its brief.</p>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px">
+              <label class="chip" style="cursor:pointer"><input type="checkbox" id="unlock-all"> Unlock all (free play)</label>
+              <button type="button" class="btn sm ghost" id="btn-reset">Reset progress</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= MISSION SCREEN ================= -->
+      <section id="screen-mission" class="screen" hidden aria-labelledby="mission-title">
+        <div class="mission-top">
+          <button type="button" class="btn sm ghost" id="btn-world">← World</button>
+          <h2 id="mission-title">Mission</h2>
+          <span class="stars" id="mission-best" aria-label="best stars"></span>
+          <span class="spacer"></span>
+          <span id="mission-options"></span>
+          <button type="button" class="btn sm ghost" id="btn-brief" aria-expanded="false" aria-controls="brief-panel">Brief</button>
+          <button type="button" class="btn sm ghost" id="btn-clear">Clear design</button>
+          <button type="button" class="btn green" id="btn-run">Run simulation</button>
+        </div>
+        <div class="panel tight" id="brief-panel" hidden style="margin-bottom:10px">
+          <p id="brief-text" style="margin:0 0 6px"></p>
+          <ul id="brief-constraints" style="margin:0;padding-left:1.2em;color:var(--muted)"></ul>
+        </div>
+        <div class="hud" id="hud" aria-label="Heads-up display"></div>
+        <div class="mission-layout">
+          <div>
+            <div class="stage">
+              <canvas id="stage-canvas" tabindex="0" role="application" aria-label="Site canvas. Arrow keys move the cursor, Enter places the selected item, Delete removes, I inspects, digits select palette items, R runs the simulation." aria-describedby="status-line"></canvas>
+              <div class="overlay-tl"><span class="chip amber" id="chip-selected">Nothing selected</span><span class="chip" id="chip-mode">Place</span></div>
+            </div>
+            <p class="status-line" id="status-line" role="status" aria-live="polite">Select an item from the build palette, then click a tile or press Enter.</p>
+            <p class="keys"><kbd>←↑↓→</kbd> move · <kbd>Enter</kbd> place · <kbd>Del</kbd> remove · <kbd>I</kbd> inspect · <kbd>1–9</kbd> palette · <kbd>R</kbd> run · <kbd>Esc</kbd> cancel</p>
+            <details class="placed" open>
+              <summary>Placed components (text view)</summary>
+              <ol id="placed-list"><li>Nothing placed yet.</li></ol>
+            </details>
+          </div>
+          <aside class="side" id="side" aria-label="Build palette and inspector">
+            <div class="panel tight palette">
+              <h3 style="font-size:1rem;margin-bottom:8px">Build palette</h3>
+              <div class="modes" role="group" aria-label="Pointer mode">
+                <button type="button" data-mode="place" aria-pressed="true">Place</button>
+                <button type="button" data-mode="remove" aria-pressed="false">Remove</button>
+                <button type="button" data-mode="inspect" aria-pressed="false">Inspect</button>
+              </div>
+              <ul id="palette" aria-label="Components"></ul>
+            </div>
+            <div class="panel tight inspector" id="inspector">
+              <h3 style="font-size:1rem;margin-bottom:6px">Inspector</h3>
+              <p class="empty">Move the cursor onto a tile and press I, or use Inspect mode.</p>
+            </div>
+          </aside>
+          <button type="button" class="btn sheet-toggle" id="sheet-toggle" aria-expanded="false" aria-controls="side">Build palette</button>
+        </div>
+
+        <div class="results" id="results" hidden>
+          <div class="panel">
+            <div class="score-big"><span class="num" id="res-score">0</span><span class="stars" id="res-stars"></span><span class="chip" id="res-attempt"></span></div>
+            <h3>Feedback</h3>
+            <ul class="feedback" id="res-feedback"></ul>
+            <h3 style="margin-top:14px">Score breakdown</h3>
+            <p id="res-formula" class="mono" style="font-size:.85rem;color:var(--muted)"></p>
+            <ul class="subscores" id="res-subscores"></ul>
+            <h3 style="margin-top:14px">Iteration hints</h3>
+            <ol class="hints" id="res-hints"></ol>
+            <div class="series" id="res-charts" style="margin-top:14px"></div>
+          </div>
+          <div class="panel">
+            <h3>Engineering Report</h3>
+            <pre class="report" id="res-report" tabindex="0"></pre>
+            <div class="report-actions no-print">
+              <button type="button" class="btn sm" id="btn-download">Download .txt</button>
+              <button type="button" class="btn sm ghost" id="btn-print">Print</button>
+            </div>
+            <div class="history">
+              <h3 style="margin-top:14px">Run history</h3>
+              <div id="history-chart"></div>
+              <div class="chart-wrap"><table id="history-table"><thead></thead><tbody></tbody></table></div>
+            </div>
+            <div id="res-badges" class="badges" style="margin-top:12px"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <dialog class="tutorial" id="tutorial" aria-labelledby="tut-title">
+    <div class="panel">
+      <h2 id="tut-title">How to play</h2>
+      <ol>
+        <li><strong>Pick a mission</strong> on the world map. Mission 1 is open; each mission unlocks the next when you earn a star.</li>
+        <li><strong>Build</strong>: choose a component in the palette, then click a tile (or move the cursor with the arrow keys and press <kbd>Enter</kbd>). <kbd>Delete</kbd> removes, <kbd>I</kbd> inspects.</li>
+        <li><strong>Run the simulation</strong>. The Engineering Report gives you numbers, not praise: cost, people served, reliability, safety factor, score.</li>
+        <li><strong>Iterate</strong>. Read the hints, change the design, run again. Your run history shows whether you are improving.</li>
+      </ol>
+      <p style="color:var(--muted);font-size:.95rem">Everything is keyboard-operable and every canvas change is mirrored in text. Progress is saved in this browser only.</p>
+      <div class="actions">
+        <button type="button" class="btn" id="tut-start">Start playing</button>
+        <button type="button" class="btn ghost" id="tut-skip">Skip</button>
+      </div>
+    </div>
+  </dialog>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="row">
+        <nav aria-label="Footer"><a href="../">About</a><a href="./">Play</a><a href="../docs/">Docs</a></nav>
+        <a href="/hackathon/">← Back to Hackathon</a>
+      </div>
+      <p class="quiet">An independent project, supported and showcased by <a href="/hackathon/">Anantam Hackathon</a>.</p>
+    </div>
+  </footer>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

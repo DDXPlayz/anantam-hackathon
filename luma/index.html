@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LUMA — A laboratory in your browser</title>
+  <meta name="description" content="LUMA is a browser-based virtual STEM laboratory: nine physics, electronics and chemistry experiments whose results are computed from real models, with instrument noise, error analysis and auto-generated reports.">
+  <link rel="canonical" href="https://anantamracing.com/hackathon/luma/">
+  <meta name="theme-color" content="#07090B">
+  <meta property="og:title" content="LUMA — A laboratory in your browser">
+  <meta property="og:description" content="Nine interactive experiments, computed live, with measurements, graphs and reports. Fully keyboard-accessible.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="luma.css?v=3">
+  <script>try{var p=JSON.parse(localStorage.getItem('luma:v1')||'{}').prefs||{};var r=document.documentElement;if(p.hc)r.classList.add('hc');if(p.simple)r.classList.add('simple');if(p.rm===true||(p.rm==null&&matchMedia('(prefers-reduced-motion: reduce)').matches))r.classList.add('rm');}catch(e){}</script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <header class="topbar">
+    <a class="wordmark" href="./" aria-label="LUMA home">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="17" fill="none" stroke="currentColor" stroke-width="4"/><path d="M4 32 H22 M42 32 H60" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M25 32 L39 32" stroke="#FFB547" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="#FFB547"/></svg>
+      LUMA <small>a laboratory in your browser</small>
+    </a>
+    <nav class="topnav" aria-label="Site">
+      <div class="pref-toggles" role="group" aria-label="Accessibility preferences">
+        <button type="button" class="toggle" data-pref="hc" data-label="High contrast" aria-pressed="false"><span class="sw" aria-hidden="true"></span>High contrast</button>
+        <button type="button" class="toggle" data-pref="rm" data-label="Reduced motion" aria-pressed="false"><span class="sw" aria-hidden="true"></span>Reduced motion</button>
+        <button type="button" class="toggle" data-pref="simple" data-label="Simplified interface" aria-pressed="false"><span class="sw" aria-hidden="true"></span>Simplified</button>
+      </div>
+      <a href="./" aria-current="page">Home</a>
+      <a href="lab/">Laboratory</a>
+      <a href="docs/">Docs</a>
+      <a class="back" href="/hackathon/">← Back to Hackathon</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="wrap">
+        <div>
+          <p class="eyebrow eyebrow--phos">Virtual STEM laboratory · v1</p>
+          <h1>A laboratory <em>in your browser.</em></h1>
+          <p class="lede">Nine physics, electronics and chemistry experiments whose results are computed from real equations while you watch — not played back from recordings. Set the variables, run the apparatus, take noisy readings, fit the graph, and get a full report.</p>
+          <div class="cta-row">
+            <a class="btn btn--primary btn--lg" href="lab/">Open the laboratory</a>
+            <a class="btn btn--lg" href="docs/">How it is modelled</a>
+          </div>
+        </div>
+        <div class="scope" aria-hidden="true">
+          <span class="scope__label">CH1 · pendulum θ(t)</span>
+          <svg viewBox="0 0 400 300" preserveAspectRatio="none">
+            <defs><pattern id="g" width="40" height="30" patternUnits="userSpaceOnUse"><path d="M40 0H0V30" fill="none" stroke="#1F2A32" stroke-width="1"/></pattern></defs>
+            <rect width="400" height="300" fill="url(#g)"/>
+            <line x1="0" y1="150" x2="400" y2="150" stroke="#2B3844"/>
+            <path id="trace" d="M0 150 C 20 30, 40 30, 60 150 S 100 270, 120 150 S 160 40, 180 150 S 220 258, 240 150 S 280 50, 300 150 S 340 245, 360 150 S 400 60, 400 150" fill="none" stroke="#5CFF8A" stroke-width="2.5"/>
+            <path d="M0 150 C 20 40, 40 40, 60 150 S 100 260, 120 150 S 160 40, 180 150 S 220 260, 240 150 S 280 40, 300 150 S 340 260, 360 150 S 400 40, 400 150" fill="none" stroke="#59D6FF" stroke-width="1.5" stroke-dasharray="6 5" opacity=".7"/>
+            <text x="8" y="292" fill="#6E7E8A" font-family="IBM Plex Mono, monospace" font-size="10">0 s</text>
+            <text x="365" y="292" fill="#6E7E8A" font-family="IBM Plex Mono, monospace" font-size="10">6.0 s</text>
+            <text x="8" y="16" fill="#FFB547" font-family="IBM Plex Mono, monospace" font-size="10">T = 2.006 s · 2π√(L/g) = 2.006 s · Δ 0.02 %</text>
+          </svg>
+          <span class="scope__label2">simulated · nonlinear · damped</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="problem-h">
+      <div class="wrap two-col">
+        <div>
+          <p class="eyebrow">The barrier</p>
+          <h2 id="problem-h">Most students never get to hold the apparatus.</h2>
+          <p>Practical work is where science stops being a page of formulae and becomes something you can test. But a working physics bench, an electronics kit or a kinetics set-up costs money, space, supervision and consumables — and many schools, home learners and adult students simply do not have them. The usual substitute is a video of someone else doing the experiment, which removes the one thing that mattered: you deciding what to change and finding out what happens.</p>
+        </div>
+        <div>
+          <p class="eyebrow">What LUMA does instead</p>
+          <h2>Compute the experiment, don't replay it.</h2>
+          <p>Every LUMA experiment is a mathematical model integrated in real time. Change the launch angle and the trajectory is re-solved. Add a resistor and the currents are re-derived. Measurements come from simulated instruments with documented resolution and noise, so "experimental" and "theoretical" values genuinely differ — and you get to explain why. Data tables, live graphs, fits, error analysis and a written report are built in.</p>
+        </div>
+      </div>
+      <div class="wrap">
+        <div class="stat-row" role="list" aria-label="At a glance">
+          <div class="stat" role="listitem"><b>9</b><span>experiments across physics, electronics and chemistry</span></div>
+          <div class="stat" role="listitem"><b>0</b><span>pre-recorded results — every number is computed from the model</span></div>
+          <div class="stat" role="listitem"><b>3</b><span>accessibility modes: high contrast, reduced motion, simplified interface</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="exp-h">
+      <div class="wrap">
+        <p class="eyebrow">Bench inventory</p>
+        <h2 id="exp-h">Nine experiments</h2>
+        <div class="exp-grid" id="exp-grid"></div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="how-h">
+      <div class="wrap">
+        <p class="eyebrow">Workflow</p>
+        <h2 id="how-h">How a session runs</h2>
+        <ul class="feature-list">
+          <li><b>01 · Set up</b><p>Choose an experiment from the rail. Every variable is a labelled slider with a paired numeric field and units. Where it makes sense you add and remove components — resistors, parallel branches, an air-drag term.</p></li>
+          <li><b>02 · Run</b><p>Start, pause, stop and reset the apparatus. Time-based experiments integrate their equations of motion with a fourth-order Runge–Kutta scheme; circuits and optics respond instantly.</p></li>
+          <li><b>03 · Measure</b><p>Each "Take measurement" samples the instruments — with their real resolution and noise — and appends a row with measured and theoretical values and the percentage error.</p></li>
+          <li><b>04 · Analyse</b><p>Switch between live traces and data plots, fit a straight line, and read what the slope means. A "Describe this graph" button writes out the trend, extrema and fit in words.</p></li>
+          <li><b>05 · Observe</b><p>Record free-text observations with timestamps. They are stored with the data and appear in the report.</p></li>
+          <li><b>06 · Report</b><p>Generate a full report: objective, set-up, measurements, graphs, worked calculations with substituted numbers, result, error analysis, and a conclusion written from your data. Print it, or export as HTML or JSON.</p></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="a11y-h">
+      <div class="wrap two-col">
+        <div>
+          <p class="eyebrow">Accessibility statement</p>
+          <h2 id="a11y-h">Built to be operated without a mouse, a screen, or a steady hand.</h2>
+          <p>LUMA is designed so that a student using a keyboard only, a screen reader, a magnifier, or who needs low-motion or low-complexity interfaces can carry out the same experiment as everyone else and produce the same report.</p>
+        </div>
+        <div>
+          <ul class="feature-list" style="grid-template-columns:1fr">
+            <li><b>Keyboard</b><p>Every control is reachable with Tab and operable with Enter, Space or the arrow keys. Sliders step with arrows and jump with Home/End. Visible focus rings everywhere; no keyboard traps; a skip link on every page.</p></li>
+            <li><b>Screen readers</b><p>Labelled controls with units, live but throttled announcements of readouts and measurements, a text description of the apparatus and of every graph.</p></li>
+            <li><b>Vision</b><p>High-contrast mode, scalable text that survives 200 % zoom, and no information carried by colour alone — LED state, warnings and graph series all have text, icons or dash patterns.</p></li>
+            <li><b>Motion and cognition</b><p>Reduced-motion mode (and the system preference) replaces animation with stepwise updates. Simplified mode hides advanced controls and presents one task at a time.</p></li>
+          </ul>
+          <p style="margin-top:1rem"><a href="docs/#accessibility">Full accessibility documentation →</a></p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <p class="quiet">An independent project, supported and showcased by <a href="/hackathon/">Anantam Hackathon</a>.</p>
+      <nav aria-label="Footer"><a href="lab/">Laboratory</a><a href="docs/">Documentation</a><a href="/hackathon/">← Back to Hackathon</a></nav>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" hidden aria-hidden="true"></div>
+  <div id="sr-announce" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
+  <script type="module">
+    import { EXPERIMENTS, SUBJECTS, DIFFICULTY } from './js/registry.js';
+    import { bindPrefToggles } from './js/a11y.js';
+    bindPrefToggles();
+    const grid = document.getElementById('exp-grid');
+    for (const e of EXPERIMENTS) {
+      const a = document.createElement('a'); a.className = 'exp-card'; a.href = `lab/#${e.id}`;
+      const dots = [1, 2, 3].map(i => `<i class="${i <= e.difficulty ? 'on' : ''}"></i>`).join('');
+      a.innerHTML = `<div class="exp-card__meta"><span>${SUBJECTS.find(s => s.id === e.subject).label}</span><span class="diff" aria-label="Difficulty: ${DIFFICULTY[e.difficulty]}"><span aria-hidden="true">${dots}</span> ${DIFFICULTY[e.difficulty]}</span></div><h3 class="exp-card__title">${e.title}</h3><p class="exp-card__desc">${e.blurb}</p><p class="exp-card__measure">${e.measures}</p>`;
+      grid.appendChild(a);
+    }
+  </script>
+</body>
+</html>

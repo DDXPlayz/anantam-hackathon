@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Documentation — LUMA</title>
+  <meta name="description" content="How every LUMA experiment is modelled: equations, integration methods, instrument noise and resolution, limitations, accessibility features, and notes for teachers.">
+  <link rel="canonical" href="https://anantamracing.com/hackathon/luma/docs/">
+  <meta name="theme-color" content="#07090B">
+  <meta property="og:title" content="LUMA Documentation">
+  <meta property="og:description" content="Models, integration methods, instrument noise, limitations and accessibility features of the LUMA virtual laboratory.">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../luma.css?v=3">
+  <script>try{var p=JSON.parse(localStorage.getItem('luma:v1')||'{}').prefs||{};var r=document.documentElement;if(p.hc)r.classList.add('hc');if(p.simple)r.classList.add('simple');if(p.rm===true||(p.rm==null&&matchMedia('(prefers-reduced-motion: reduce)').matches))r.classList.add('rm');}catch(e){}</script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <header class="topbar">
+    <a class="wordmark" href="../" aria-label="LUMA home">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="17" fill="none" stroke="currentColor" stroke-width="4"/><path d="M4 32 H22 M42 32 H60" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M25 32 L39 32" stroke="#FFB547" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="#FFB547"/></svg>
+      LUMA <small>documentation</small>
+    </a>
+    <nav class="topnav" aria-label="Site">
+      <div class="pref-toggles" role="group" aria-label="Accessibility preferences">
+        <button type="button" class="toggle" data-pref="hc" data-label="High contrast" aria-pressed="false"><span class="sw" aria-hidden="true"></span>High contrast</button>
+        <button type="button" class="toggle" data-pref="rm" data-label="Reduced motion" aria-pressed="false"><span class="sw" aria-hidden="true"></span>Reduced motion</button>
+        <button type="button" class="toggle" data-pref="simple" data-label="Simplified interface" aria-pressed="false"><span class="sw" aria-hidden="true"></span>Simplified</button>
+      </div>
+      <a href="../">Home</a>
+      <a href="../lab/">Laboratory</a>
+      <a href="./" aria-current="page">Docs</a>
+      <a class="back" href="/hackathon/">← Back to Hackathon</a>
+    </nav>
+  </header>
+
+  <main id="main" class="wrap docs">
+    <nav class="docs__toc" aria-label="On this page">
+      <p class="eyebrow">Contents</p>
+      <ol>
+        <li><a href="#principles">Principles</a></li>
+        <li><a href="#instruments">Instruments &amp; noise</a></li>
+        <li><a href="#projectile">Projectile motion</a></li>
+        <li><a href="#pendulum">Pendulum</a></li>
+        <li><a href="#ohm">Ohm's law</a></li>
+        <li><a href="#refraction">Refraction</a></li>
+        <li><a href="#series">Series circuit</a></li>
+        <li><a href="#parallel">Parallel circuit</a></li>
+        <li><a href="#led">LED circuit</a></li>
+        <li><a href="#reaction">Reaction rate</a></li>
+        <li><a href="#gas">Gas laws</a></li>
+        <li><a href="#analysis">Error analysis &amp; reports</a></li>
+        <li><a href="#accessibility">Accessibility</a></li>
+        <li><a href="#limitations">Limitations</a></li>
+        <li><a href="#teachers">For teachers</a></li>
+        <li><a href="#data">Data &amp; privacy</a></li>
+      </ol>
+    </nav>
+
+    <article class="docs__content">
+      <h2 id="principles">Principles</h2>
+      <p>LUMA has one rule: nothing is pre-recorded. Every readout, table row and graph point is computed from a mathematical model of the apparatus, in the browser, at the moment you ask for it. Time-dependent experiments (projectile, pendulum, reaction kinetics) integrate their differential equations numerically with the classical fourth-order Runge–Kutta method (RK4). Static experiments (circuits, optics, gases) solve their governing equations directly, or by bisection/Newton iteration where they are non-linear.</p>
+      <p>"Measured" values are not the same as the model's exact values: they pass through a simulated instrument that adds Gaussian reading noise and rounds to a display resolution (see below). This is deliberate. Comparing an experimental value with a theoretical one, computing a percentage error, and deciding whether the discrepancy is explained by the instruments is the point of laboratory work, and it only makes sense if the two can differ.</p>
+      <p>The source is plain ES modules with no libraries: one engine per experiment under <code>js/experiments/</code>, a plotting module, a report module, a store, and an accessibility module.</p>
+
+      <h2 id="instruments">Instruments and the noise model</h2>
+      <p>Each instrument is defined by a display resolution, a relative noise (σ as a fraction of the reading) and an absolute noise floor. A reading is <code>quantise(true + N(0, σ), resolution)</code> with <code>σ = √((rel × |true|)² + abs²)</code>. Noise is drawn from a seeded pseudo-random generator (mulberry32 with Box–Muller), seeded per session. Live readouts on the apparatus show the quantised value without noise; "Take measurement" draws a fresh noisy sample. Manufactured resistors additionally carry a fixed ±1 % tolerance, deterministic per slot and nominal value, so repeated readings of the same circuit are consistent but not exactly nominal.</p>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Instrument</th><th>Used in</th><th>Resolution</th><th>Noise σ (relative)</th><th>Noise floor (absolute)</th></tr></thead>
+        <tbody>
+          <tr><td>Measuring tape</td><td>Projectile (range)</td><td>0.01 m</td><td>0.2 %</td><td>0.005 m</td></tr>
+          <tr><td>Height gauge</td><td>Projectile (max height)</td><td>0.01 m</td><td>0.3 %</td><td>0.005 m</td></tr>
+          <tr><td>Photogate timer</td><td>Projectile (time of flight)</td><td>0.01 s</td><td>0.1 %</td><td>0.008 s</td></tr>
+          <tr><td>Photogate stopwatch</td><td>Pendulum (n periods)</td><td>0.01 s</td><td>0.1 %</td><td>0.012 s</td></tr>
+          <tr><td>Digital ammeter</td><td>Ohm, series, parallel, LED</td><td>0.1 mA</td><td>0.5 %</td><td>0.05 mA</td></tr>
+          <tr><td>Digital voltmeter</td><td>Ohm, series, LED</td><td>0.01 V</td><td>0.3 %</td><td>0.005 V</td></tr>
+          <tr><td>Optical protractor</td><td>Refraction</td><td>0.5°</td><td>—</td><td>0.3°</td></tr>
+          <tr><td>Concentration probe</td><td>Reaction rate</td><td>0.001 M</td><td>0.4 %</td><td>0.0005 M</td></tr>
+          <tr><td>Pressure transducer</td><td>Gas laws</td><td>0.1 kPa</td><td>0.2 %</td><td>0.05 kPa</td></tr>
+          <tr><td>Volume scale</td><td>Gas laws</td><td>0.01 L</td><td>0.2 %</td><td>0.005 L</td></tr>
+          <tr><td>Platinum thermometer</td><td>Gas laws</td><td>0.1 K</td><td>—</td><td>0.2 K</td></tr>
+        </tbody>
+      </table></div>
+
+      <h2 id="projectile">Projectile motion</h2>
+      <p><strong>Model.</strong> Point mass launched from height h₀ at speed v₀ and angle θ, under gravity g, optionally with quadratic air drag per unit mass k (m⁻¹):</p>
+      <code class="eq">ẍ = −k |v| ẋ        ÿ = −g − k |v| ẏ</code>
+      <p><strong>Integration.</strong> RK4 with Δt = 2 ms on the state (x, y, ẋ, ẏ). The landing instant is found by linear interpolation across the last step where y crosses zero. Time is scaled so that long flights complete in about six seconds of real time.</p>
+      <p><strong>Theory shown.</strong> Drag-free analytic values: T = [v₀ sin θ + √(v₀² sin² θ + 2 g h₀)] / g, R = v₀ cos θ · T, H = h₀ + (v₀ sin θ)² / 2g. When drag is enabled the simulation deviates from these — which is the intended lesson.</p>
+      <p><strong>Graphs.</strong> Live trajectory against the analytic parabola; range and time of flight against launch angle with the theoretical curve; measured range against theoretical range with a linear fit (slope 1 = agreement).</p>
+
+      <h2 id="pendulum">Simple pendulum</h2>
+      <p><strong>Model.</strong> Full nonlinear pendulum with viscous damping:</p>
+      <code class="eq">θ̈ = −(g / L) sin θ − (b / m) θ̇</code>
+      <p><strong>Integration.</strong> RK4 with Δt = 1 ms. Period boundaries are the positive-going zero crossings of θ (interpolated within the step), which is what a photogate at the bottom of the swing detects. The run stops after ten periods or 30 s.</p>
+      <p><strong>Theory shown.</strong> Small-angle T₀ = 2π√(L/g), and the exact-period series T = T₀ (1 + θ₀²/16 + 11θ₀⁴/3072 + 173θ₀⁶/737280). The stopwatch measures the total time for n periods and divides, so timing noise shrinks as 1/n.</p>
+      <p><strong>Graphs.</strong> θ(t) against the small-angle cosine; T vs L; T² vs L with a fit whose slope is 4π²/g; T vs amplitude against the exact series and the small-angle constant.</p>
+
+      <h2 id="ohm">Ohm's law</h2>
+      <p><strong>Model.</strong> I = V / R_total with R_total the series sum of 1–4 nominal resistors, each perturbed by its fixed ±1 % tolerance. Ideal source and wires.</p>
+      <p><strong>Graphs.</strong> I vs V with a least-squares line whose slope is 1/R; V vs I (slope R); measured vs theoretical current. The report extracts R from the fit and compares it with the nominal value.</p>
+
+      <h2 id="refraction">Refraction and Snell's law</h2>
+      <p><strong>Model.</strong> n₁ sin i = n₂ sin r. If (n₁/n₂) sin i &gt; 1 there is no refracted ray and the beam is totally internally reflected; the critical angle sin θc = n₂/n₁ is reported when n₁ &gt; n₂. Both media are adjustable between 1.00 and 2.50; the nearest named material is displayed. Monochromatic light — no dispersion.</p>
+      <p><strong>Graphs.</strong> sin r vs sin i with fit (slope n₁/n₂); r vs i with the Snell curve.</p>
+
+      <h2 id="series">Series circuit</h2>
+      <p><strong>Model.</strong> R_total = ΣRᵢ (actual values with tolerance), I = V/R_total, Vᵢ = I·Rᵢ. Each measurement records the ammeter reading and a voltmeter reading across every element, so Kirchhoff's voltage law (ΣVᵢ = V) can be checked with noisy data.</p>
+      <p><strong>Graphs.</strong> Voltage drop vs resistance for the latest row (slope = current); total current vs supply (slope = 1/R_total); ΣV vs V.</p>
+
+      <h2 id="parallel">Parallel circuit</h2>
+      <p><strong>Model.</strong> 1/R_eq = Σ 1/Rᵢ; branch currents Iᵢ = V/Rᵢ; supply current V/R_eq. Every branch has its own ammeter, so Kirchhoff's current law (ΣIᵢ = I) can be tested.</p>
+      <p><strong>Graphs.</strong> Branch current vs conductance 1/R (slope = V); total current vs supply (slope = 1/R_eq); ΣIᵢ vs I.</p>
+
+      <h2 id="led">LED circuit</h2>
+      <p><strong>Model.</strong> Shockley diode equation with n·V_T = 0.05 V, with the saturation current fitted so that the chosen colour reaches its rated forward voltage at 20 mA:</p>
+      <code class="eq">I = I_s (e^{V_d / nV_T} − 1),     V = V_d + I R</code>
+      <p>The operating point is found by bisection on V_d. The simple textbook estimate I ≈ (V − V_f)/R is shown alongside as the "linear" theory so that its failure near turn-on and at high current is visible. LED brightness is rendered proportional to I/I_max; states OK, OFF (I &lt; 1 mA) and OVERCURRENT (I &gt; I_max) are shown as text and as a warning box, never by colour alone. The recommended series resistor for a target current is (V − V_f)/I_target rounded up to the E12 series.</p>
+      <div class="tbl-wrap"><table><thead><tr><th>LED</th><th>V_f at 20 mA</th><th>I_max</th></tr></thead><tbody>
+        <tr><td>Red (AlGaInP)</td><td>1.8 V</td><td>20 mA</td></tr><tr><td>Yellow</td><td>2.0 V</td><td>20 mA</td></tr><tr><td>Green (InGaN)</td><td>2.1 V</td><td>20 mA</td></tr><tr><td>Blue</td><td>3.0 V</td><td>20 mA</td></tr><tr><td>White</td><td>3.2 V</td><td>25 mA</td></tr>
+      </tbody></table></div>
+
+      <h2 id="reaction">Reaction rate</h2>
+      <p><strong>Model.</strong> A single reactant A → products with rate law −d[A]/dt = k[A]ⁿ (n = 1 by default; 2 available as an advanced option) and an Arrhenius rate constant:</p>
+      <code class="eq">k = A · exp(−Eₐ / (R T)),     catalyst: Eₐ → Eₐ − ΔEₐ</code>
+      <p><strong>Integration.</strong> RK4 on [A] with a sub-step no larger than 1/2000 of the run. The run length is chosen so that most of the reactant is consumed (4/k for first order, 19/(k[A]₀) for second order, capped between 5 s and 1 h of simulated time) and is compressed into about 12 s of real time. A probe samples [A] two hundred times per run.</p>
+      <p><strong>Measurement.</strong> The initial rate is −b from a least-squares quadratic c = a + b t + q t² through the (noisy) probe samples in the first 10 % of the run — a tangent-at-zero estimate that does not suffer the bias of a straight line through a curved trace. Probe noise is amplified by this differentiation, which is why repeated runs scatter by a few per cent.</p>
+      <p><strong>Graphs.</strong> Live [A](t) against the analytic solution; ln(rate) vs ln[A]₀ (slope = order); ln(rate) vs 1/T (slope = −Eₐ/R); rate vs [A]₀.</p>
+
+      <h2 id="gas">Gas laws</h2>
+      <p><strong>Model.</strong> Ideal gas PV = nRT (R = 8.314 J mol⁻¹ K⁻¹) as the theory, and — when a real gas is selected — van der Waals behaviour as the "actual" gas in the cylinder:</p>
+      <code class="eq">(P + a n² / V²)(V − n b) = n R T</code>
+      <p>Constants (a in Pa·m⁶·mol⁻², b in m³·mol⁻¹): He 0.00346 / 2.38×10⁻⁵; N₂ 0.137 / 3.87×10⁻⁵; CO₂ 0.364 / 4.27×10⁻⁵; NH₃ 0.4225 / 3.71×10⁻⁵. In isobaric mode the volume is found from the held pressure by Newton iteration. Three processes are provided: isothermal (vary V, read P), isochoric (vary T, read P) and isobaric (vary T, read V); the control that the process holds fixed is disabled and explained.</p>
+      <p><strong>Graphs.</strong> P vs V with the ideal isotherm; P vs 1/V (slope nRT); P vs T (slope nR/V, intercept → absolute zero); V vs T (slope nR/P); compressibility Z = PV/nRT vs P.</p>
+
+      <h2 id="analysis">Error analysis and reports</h2>
+      <p>Every data row stores the measured value, the theoretical value and <code>error % = |measured − theoretical| / |theoretical| × 100</code>. The report gives the mean percentage error over all rows.</p>
+      <p>Uncertainty is stated for the most recent group of rows taken at identical settings. With one or two readings it is the single-reading instrument uncertainty, √((resolution/2)² + σ²). With three or more readings it is the standard error of the mean, s/√n, never smaller than the instrument uncertainty divided by √n. Linear fits report slope, intercept, R² and, where n &gt; 2, the standard error of the slope.</p>
+      <p>The report has nine sections — objective, set-up, measurements, graphs (rendered as SVG), calculations with the formula, the substituted numbers and the result, result summary, error analysis with likely sources, observations, and a conclusion. The conclusion is generated from your data: it states the level of agreement, checks whether the deviation is within instrument noise, and comments on systematic effects it can detect (drag, large amplitudes, catalyst, real-gas behaviour, overcurrent). It can be printed, downloaded as a self-contained HTML file, or exported as JSON containing the parameters, rows, observations, analysis and graph data.</p>
+
+      <h2 id="accessibility">Accessibility</h2>
+      <h3>Keyboard</h3>
+      <p>Every control is a native element (button, range, number, select, checkbox, textarea) so the browser provides the full keyboard model: Tab/Shift+Tab to move, Enter/Space to activate, arrow keys to change a slider by one step, Page Up/Down for larger steps, Home/End to jump to the limits. Each slider has a paired numeric field for typing an exact value. Focus is always visible (a 3 px ring, yellow in high-contrast mode). The report opens in a native dialog that traps focus and closes with Escape. Each page has a skip link.</p>
+      <h3>Screen readers</h3>
+      <p>All controls are labelled with the quantity and unit; sliders expose <code>aria-valuetext</code> with the unit. The apparatus SVG has a role of image with a text description that updates with the settings. A single polite live region announces: run start/stop/complete, each measurement (with the key values), warnings, and — during a run — a summary of the first three readouts at most once every three seconds, so the reader is not flooded by animation frames. Warnings use role status (or alert for overcurrent). The "Describe this graph" button writes a textual description (series, trend, minima/maxima, fit and its meaning) to a polite live region beneath the graph; the same description is set as the canvas's accessible name.</p>
+      <h3>Vision</h3>
+      <p>High-contrast mode switches to a pure black background, white text, brighter accent colours and stronger borders, and removes the background grid. Text is set in rem units and the layout survives 200 % zoom (panels stack). Colour never carries information alone: theoretical readouts are also marked "(th)", LED state is text, warnings have an icon and the word "Warning"/"Error", and graph series use distinct dash patterns and markers with a text legend.</p>
+      <h3>Motion</h3>
+      <p>Reduced-motion mode is on automatically when the operating system requests it and can be toggled on any page. In this mode the run loop is not animated: Start computes the whole run at once and shows the final state and trace, and a Step button advances the simulation by a quarter of a second of scaled time so the evolution can still be examined. Moving charge markers and gas particles are drawn static.</p>
+      <h3>Simplified interface</h3>
+      <p>Simplified mode hides advanced parameters (marked ADV) and shows a task strip with one instruction at a time and Previous/Next buttons; the controls the current task refers to are outlined. All three preferences persist in local storage and apply before the first paint on every page.</p>
+
+      <h2 id="limitations">Limitations</h2>
+      <ul>
+        <li>Models are idealised: no wire resistance or source impedance in circuits, no dispersion in optics, no heat transfer or reverse reaction in kinetics, a single van der Waals correction for real gases.</li>
+        <li>Noise is Gaussian and stationary. Real instruments drift, have offset errors and are occasionally misread; LUMA models none of these.</li>
+        <li>Numerical integration is accurate to far better than instrument noise at the step sizes used, but the pendulum run is capped at 30 s and the reaction at one hour of simulated time.</li>
+        <li>The reaction-rate experiment is a single hypothetical reaction with adjustable constants, not a specific named reaction.</li>
+        <li>Downloads (CSV, HTML, JSON) rely on the browser allowing file downloads; the print view relies on pop-ups being allowed. If either is blocked the interface says so.</li>
+        <li>All data lives in the browser's local storage. Nothing is uploaded, which also means nothing is backed up: export reports you want to keep.</li>
+      </ul>
+
+      <h2 id="teachers">For teachers</h2>
+      <p>Each experiment includes a task sequence (visible in Simplified mode) that follows a conventional practical: set up, run, measure, vary one variable, fit, conclude. Reasonable 40-minute sessions are, for example: Ohm's law with five voltages and a fit; the pendulum at four lengths for g from the T² vs L slope, then one large-amplitude run to discuss the small-angle approximation; reaction kinetics at four concentrations for the order, then four temperatures for Eₐ.</p>
+      <p>Because measurements are noisy, students can take repeated readings at the same settings and see the reported uncertainty change from an instrument estimate to a standard error at three readings. The JSON export contains everything a student did, including timestamped observations, which makes it usable as evidence of practical work. The advanced parameters (gravity, damping, activation energy, reaction order, gas type) allow you to set a "mystery" configuration for students to determine from data.</p>
+
+      <h2 id="data">Data and privacy</h2>
+      <p>LUMA stores your preferences, last-used parameters, data rows and observations per experiment in <code>localStorage</code> under the key <code>luma:v1</code>. No analytics, no cookies, no network requests other than fetching the page, its scripts and the fonts. Clearing site data in your browser removes everything.</p>
+    </article>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <p class="quiet">An independent project, supported and showcased by <a href="/hackathon/">Anantam Hackathon</a>.</p>
+      <nav aria-label="Footer"><a href="../">Home</a><a href="../lab/">Laboratory</a><a href="/hackathon/">← Back to Hackathon</a></nav>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" hidden aria-hidden="true"></div>
+  <div id="sr-announce" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
+  <script type="module">import { bindPrefToggles } from '../js/a11y.js'; bindPrefToggles();</script>
+</body>
+</html>
