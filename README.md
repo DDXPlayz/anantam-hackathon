@@ -1,17 +1,32 @@
 # Anantam Hackathon
 
-One page at `anantamracing.com/hackathon/`, plus the five showcase projects.
-Static HTML/CSS/JS, no build step — it deploys with the rest of the site.
+One hub page plus the five showcase projects. Static HTML/CSS/JS, no build
+step — it deploys with the rest of the site.
 
-| Path | What it is |
-| --- | --- |
-| `/hackathon/` | The hackathon page: the challenge, the five projects, how it works, judging, entry by email, FAQ |
-| `/hackathon/luma/` | LUMA — a laboratory in your browser |
-| `/hackathon/prism/` | PRISM — see the science differently |
-| `/hackathon/janus/` | JANUS — STEM that works without the internet |
-| `/hackathon/openlab/` | OPENLAB — build more with what you already have |
-| `/hackathon/stemscape/` | STEMSCAPE — engineer the world |
-| `/hackathon/2026/` | Archive of the concluded 2026 edition |
+## Two hosts
+
+The hub is served from its own subdomain; the projects are served from the
+main domain. Links that cross between them **must be absolute**.
+
+| Live URL | Source | What it is |
+| --- | --- | --- |
+| `hackathon.anantamracing.com/` | `hackathon/index.html` | The hub: the challenge, the five projects, how it works, judging, entry by email, FAQ |
+| `anantamracing.com/hackathon/luma/` | `hackathon/luma/` | LUMA — a laboratory in your browser |
+| `anantamracing.com/hackathon/prism/` | `hackathon/prism/` | PRISM — see the science differently |
+| `anantamracing.com/hackathon/janus/` | `hackathon/janus/` | JANUS — STEM that works without the internet |
+| `anantamracing.com/hackathon/openlab/` | `hackathon/openlab/` | OPENLAB — build more with what you already have |
+| `anantamracing.com/hackathon/stemscape/` | `hackathon/stemscape/` | STEMSCAPE — engineer the world |
+| `anantamracing.com/hackathon/2026/` | `hackathon/2026/` | Archive of the concluded 2026 edition |
+
+The hub canonicalises to the subdomain, so `anantamracing.com/hackathon/`
+serves the same file but defers to it — the same arrangement inspire, rise
+and sustain use. For that reason the hub is not listed in the main
+`sitemap.xml`; its project pages are. If you want the hub indexed under its
+own host, give that host its own `sitemap.xml` and `robots.txt`.
+
+Within a project, root-relative paths (`/hackathon/luma/...`) are correct
+because projects live on the main domain. Back-links to the hub and the
+hub's links out to the projects are absolute, so they work from either host.
 
 ## Editing between editions
 
